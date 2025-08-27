@@ -124,8 +124,8 @@ jobs:
         with:
           files: mooncake-wheel/dist-release/*.whl
 
-      - name: Publish package to PyPI
-        uses: pypa/gh-action-pypi-publish@release/v1
-        with:
-          packages-dir: mooncake-wheel/dist-release/
-          password: ${{ secrets.PYPI_API_TOKEN }}
+      # - name: Publish package to PyPI
+      #   uses: pypa/gh-action-pypi-publish@release/v1
+      #   with:
+      #     packages-dir: mooncake-wheel/dist-release/
+      #     password: ${{ secrets.PYPI_API_TOKEN }}

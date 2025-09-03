@@ -364,6 +364,7 @@ PYBIND11_MODULE(store, m) {
             "exists, 0 if not exists, -1 if error")
         .def("close",
              [](MooncakeStorePyWrapper &self) {
+                py::gil_scoped_release release;
                  return self.store_.tearDownAll();
              })
         .def("get_size",

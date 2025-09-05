@@ -286,11 +286,11 @@ PYBIND11_MODULE(store, m) {
                 const std::string &protocol = "tcp",
                 const std::string &rdma_devices = "",
                 const std::string &master_server_addr = "127.0.0.1:50051") {
-                py::gil_scoped_release release;
-                return self.store_.setup(local_hostname, metadata_server,
-                                         global_segment_size,
-                                         local_buffer_size, protocol,
-                                         rdma_devices, master_server_addr);
+                 py::gil_scoped_release release;
+                 return self.store_.setup(local_hostname, metadata_server,
+                                          global_segment_size,
+                                          local_buffer_size, protocol,
+                                          rdma_devices, master_server_addr);
              })
         .def("init_all",
              [](MooncakeStorePyWrapper &self, const std::string &protocol,
@@ -352,8 +352,8 @@ PYBIND11_MODULE(store, m) {
             "exists, 0 if not exists, -1 if error")
         .def("close",
              [](MooncakeStorePyWrapper &self) {
-                py::gil_scoped_release release
-                return self.store_.tearDownAll();
+                 py::gil_scoped_release release;
+                 return self.store_.tearDownAll();
              })
         .def("get_size",
              [](MooncakeStorePyWrapper &self, const std::string &key) {

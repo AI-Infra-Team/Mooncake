@@ -146,8 +146,13 @@ class MooncakeStorePyWrapper {
                 py::tuple shape_tuple = py::cast(shape_vec);
                 np_array = np_array.attr("reshape")(shape_tuple);
             }
-            pybind11::object tensor =
-                torch_module().attr("from_numpy")(np_array);
+            auto torch = try_import_torch();
+            if (torch.is_none()) {
+                LOG(ERROR) << "PyTorch is not installed; get_tensor requires torch.";
+                py::print("[Mooncake] PyTorch not installed; get_tensor requires torch. Install with: pip install torch");
+                return pybind11::none();
+            }
+            pybind11::object tensor = torch.attr("from_numpy")(np_array);
             return tensor;
 
         } catch (const pybind11::error_already_set &e) {
@@ -167,6 +172,14 @@ class MooncakeStorePyWrapper {
                       .cast<std::string>()
                       .find("Tensor") != std::string::npos)) {
                 LOG(ERROR) << "Input is not a PyTorch tensor";
+                return -static_cast<int>(ErrorCode::INVALID_PARAMS);
+            }
+
+            // Ensure torch is available for dtype and Tensor APIs
+            auto torch = try_import_torch();
+            if (torch.is_none()) {
+                LOG(ERROR) << "PyTorch is not installed; put_tensor requires torch.";
+                py::print("[Mooncake] PyTorch not installed; put_tensor requires torch. Install with: pip install torch");
                 return -static_cast<int>(ErrorCode::INVALID_PARAMS);
             }
 

@@ -146,8 +146,13 @@ class MooncakeStorePyWrapper {
                 py::tuple shape_tuple = py::cast(shape_vec);
                 np_array = np_array.attr("reshape")(shape_tuple);
             }
-            pybind11::object tensor =
-                torch_module().attr("from_numpy")(np_array);
+            auto torch = try_import_torch();
+            if (torch.is_none()) {
+                LOG(ERROR) << "PyTorch is not installed; get_tensor requires torch.";
+                try { py::print("[Mooncake] PyTorch not installed; get_tensor requires torch. Install with: pip install torch"); } catch (...) {}
+                return pybind11::none();
+            }
+            pybind11::object tensor = torch.attr("from_numpy")(np_array);
             return tensor;
 
         } catch (const pybind11::error_already_set &e) {
@@ -157,7 +162,7 @@ class MooncakeStorePyWrapper {
     }
 
     int put_tensor(const std::string &key, pybind11::object tensor) {
-        if (!store_ || !store_->client_) {
+        if (!store_.client_) {
             LOG(ERROR) << "Client is not initialized";
             return -static_cast<int>(ErrorCode::INVALID_PARAMS);
         }
@@ -167,6 +172,14 @@ class MooncakeStorePyWrapper {
                       .cast<std::string>()
                       .find("Tensor") != std::string::npos)) {
                 LOG(ERROR) << "Input is not a PyTorch tensor";
+                return -static_cast<int>(ErrorCode::INVALID_PARAMS);
+            }
+
+            // Ensure torch is available for dtype and Tensor APIs
+            auto torch = try_import_torch();
+            if (torch.is_none()) {
+                LOG(ERROR) << "PyTorch is not installed; put_tensor requires torch.";
+                try { py::print("[Mooncake] PyTorch not installed; put_tensor requires torch. Install with: pip install torch"); } catch (...) {}
                 return -static_cast<int>(ErrorCode::INVALID_PARAMS);
             }
 
@@ -214,7 +227,7 @@ class MooncakeStorePyWrapper {
             values.emplace_back(std::span<const char>(buffer, tensor_size));
 
             // Use put_parts to put metadata and tensor together
-            auto put_result = store_->put_parts_internal(key, values);
+            auto put_result = store_.put_parts_internal(key, values);
             if (!put_result) {
                 return -static_cast<int>(put_result.error());
             }

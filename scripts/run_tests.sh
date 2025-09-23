@@ -31,8 +31,18 @@ MC_METADATA_SERVER=http://127.0.0.1:8080/metadata DEFAULT_KV_LEASE_TTL=500 pytho
 MC_METADATA_SERVER=http://127.0.0.1:8080/metadata DEFAULT_KV_LEASE_TTL=500 python test_replicated_distributed_object_store.py
 sleep 1
 
-pip install torch numpy
-MC_METADATA_SERVER=http://127.0.0.1:8080/metadata DEFAULT_KV_LEASE_TTL=500 python test_put_get_tensor.py
+# Run tensor put/get test only if PyTorch is available
+python - << 'PY'
+import importlib.util, sys, subprocess
+has_torch = importlib.util.find_spec('torch') is not None
+sys.exit(0 if has_torch else 1)
+PY
+if [ $? -eq 0 ]; then
+  echo "PyTorch detected; running tensor put/get tests"
+  MC_METADATA_SERVER=http://127.0.0.1:8080/metadata DEFAULT_KV_LEASE_TTL=500 python test_put_get_tensor.py
+else
+  echo "PyTorch not installed; skipping tensor put/get tests"
+fi
 kill $MASTER_PID || true
 
 

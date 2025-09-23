@@ -11,8 +11,28 @@ namespace py = pybind11;
 
 namespace mooncake {
 
-// Avoid global py::module_ objects
-inline py::module_ torch_module() { return py::module_::import("torch"); }
+inline bool g_warned_no_torch = false;
+
+inline py::object try_import_torch(bool warn_if_missing = true) {
+    py::gil_scoped_acquire gil;
+    try {
+        return py::module_::import("torch");
+    } catch (...) {
+        if (warn_if_missing && !g_warned_no_torch) {
+            g_warned_no_torch = true;
+            auto logging = py::module_::import("logging");
+            logging.attr("warning")(
+                "[Mooncake] PyTorch not installed; tensor features are disabled.\n"
+                "Install PyTorch to enable tensor APIs: pip install torch"
+            );
+            py::print(
+                "[Mooncake] PyTorch not installed; tensor features are disabled.\n"
+                "Install PyTorch to enable tensor APIs: pip install torch"
+            );
+        }
+        return py::none();
+    }
+}
 
 enum class TensorDtype : int32_t {
     FLOAT32 = 0,
@@ -69,7 +89,10 @@ inline TensorDtype get_tensor_dtype(py::object dtype_obj) {
         return TensorDtype::UNKNOWN;
     }
 
-    auto torch = torch_module();
+    auto torch = try_import_torch();
+    if (torch.is_none()) {
+        return TensorDtype::UNKNOWN;
+    }
 
     if (dtype_obj.equal(torch.attr("float32"))) return TensorDtype::FLOAT32;
     if (dtype_obj.equal(torch.attr("float64"))) return TensorDtype::FLOAT64;

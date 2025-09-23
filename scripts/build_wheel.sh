@@ -260,6 +260,7 @@ else
     --exclude libascend_trace.so* \
     --exclude libmetadef*.so \
     --exclude libllm_datadist*.so \
+    --exclude libadxl*.so \
     -w ${REPAIRED_DIR}/ --plat ${PLATFORM_TAG}
 fi
 

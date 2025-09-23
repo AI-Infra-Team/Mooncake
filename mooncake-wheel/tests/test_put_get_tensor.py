@@ -7,6 +7,12 @@ import threading
 import random
 from mooncake.store import MooncakeDistributedStore
 
+try:
+    import torch  # noqa: F401
+    _HAS_TORCH = True
+except Exception:
+    _HAS_TORCH = False
+
 # The lease time of the kv object, should be set equal to
 # the master's value.
 DEFAULT_DEFAULT_KV_LEASE_TTL = 5000 # 5000 milliseconds
@@ -57,6 +63,7 @@ def get_client(store):
         raise RuntimeError(f"Failed to setup store client. Return code: {retcode}")
 
 
+@unittest.skipUnless(_HAS_TORCH, "PyTorch not installed; skipping tensor tests")
 class TestDistributedObjectStore(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
@@ -66,8 +73,6 @@ class TestDistributedObjectStore(unittest.TestCase):
 
     def test_put_get_tensor(self):
         """Test storing and retrieving PyTorch tensors using put_tensor/get_tensor."""
-        import torch
-
         # Float tensor
         tensor = torch.tensor([1.0, 2.0, 3.0, 4.0], dtype=torch.float32)
         key = "test_tensor_float"
@@ -121,8 +126,6 @@ class TestDistributedObjectStore(unittest.TestCase):
 
     def test_put_get_tensor_with_metadata(self):
         """Test storing and retrieving PyTorch tensors with metadata using put_tensor_with_metadata/get_tensor_with_metadata."""
-        import torch
-
         # Test with 2D float tensor
         tensor_2d = torch.tensor([[1.0, 2.0], [3.0, 4.0]], dtype=torch.float32)
         key_2d = "test_tensor_with_metadata_2d"
